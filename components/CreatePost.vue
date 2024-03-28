@@ -57,7 +57,7 @@
 
 <script setup>
 
-import { v4 as uuid } from 'uuid'
+import { v4 as uuidv4 } from 'uuid'
 import { useUserStore } from '~/stores/user';
 
 const userStore = useUserStore()
@@ -88,5 +88,49 @@ const clearData = () => {
 const onChange = () => {
     fileDisplay.value = URL.createObjectURL(file.value.files[0])
     fileData.value = file.value.files[0]
+}
+
+const createPost = async () => {
+    let dataOut = null
+    let errOut = null
+    isLoading.value = true
+
+    if (fileData.value) {
+        const { data, error } = await client.storage.from('threads-clone-files').upload(`${uuidv4()}.jpg`, fileData.value)
+        dataOut = data
+        errOut = error
+    }
+
+    if (errOut) {
+        console.log(errOut)
+        isLoading.value = false
+        return
+    }
+
+    let pic = ''
+    if (dataOut) {
+        pic = dataOut.path ? dataOut.path : ''
+    }
+
+    try {
+        await useFetch(`/api/create-post`, {
+            method: 'POST',
+            body: {
+                userId: user.value.identities[0].user_id,
+                name: user.value.identities[0].identity_data.full_name,
+                image: user.value.identities[0].identity_data.avatar_url,
+                text: text.value,
+                picture: pic
+            }
+        })
+        await userStore.getPosts()
+        userStore.isMenuOverlay = false
+
+        clearData()
+        isLoading.value = false
+
+    } catch (error) {
+        console.log(error)
+    }
 }
 </script>

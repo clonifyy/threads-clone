@@ -8,7 +8,7 @@
                         {{ post.name }}
                     </div>
                 </div>
-                <div v-if="user && user.identities && user.identities[0].user_id === post.user_id"
+                <div v-if="user && user.identities && user.identities[0].user_id === post.userId"
                     @click="isMenu = !isMenu" class="relative">
                     <button :disabled="isDeleting"
                         class="flex items-center text-white p-1 h-[24px] w-[24px] hover:bg-gray-800 rounded-full cursor-pointer"
@@ -33,7 +33,7 @@
                 <div class="bg-black rounded-lg w-[calc(100%-50px)] text-sm w-full font-light">
                     <div class="py-2 text-gray-300">{{ post.text }}</div>
                     <img v-if="post && post.picture" class="mx-auto w-full mt-2 pr-2 rounded"
-                        :src="runtimeConfig.public.bucketURL + post.picture" />
+                        :src="runtimeConfig.public.bucketURL + '/' + post.picture" />
 
                     <div class="absolute mt-2 w-full ml-2">
                         <button :disabled="isLike" @click="likesFunc()" class="flex items-center gap-1">
@@ -79,9 +79,13 @@
 
 import { useUserStore } from '~/stores/user';
 
+const emit = defineEmits(['isDeleted'])
 const userStore = useUserStore()
 const user = useSupabaseUser()
 const runtimeConfig = useRuntimeConfig()
+
+
+const client = useSupabaseClient()
 
 const isMenu = ref(false)
 const isLike = ref(false)
@@ -91,4 +95,91 @@ const props = defineProps({
     post: Object
 })
 
+const hasLikedComputed = computed(() => {
+    if (!user.value) return
+    let res = false
+    props.post.likes.forEach(like => {
+        if (like.userId === user.value.identities[0].user_id && like.postId === props.post.id) {
+            res = true
+        }
+    })
+    return res
+})
+
+const deletePost = async (id, picture) => {
+    let res = confirm('Are you sure you want to delete this post?')
+    if (!res) return
+
+    try {
+        isMenu.value = false
+        isDeleting.value = true
+        const { data, error } = await client.storage.from('threads-clone-files').remove([picture])
+        await useFetch(`/api/delete-post/${id}`, {
+            method: 'DELETE'
+        })
+
+        emit('isDeleted', true)
+        isDeleting.value = false
+        await userStore.getPosts()
+    } catch (error) {
+        console.log(error)
+        isDeleting.value = false
+
+    }
+}
+
+const likePost = async id => {
+    try {
+        isLike.value = true
+        const { data, error } = await useFetch(`/api/like-post`, {
+            method: 'POST',
+            body: {
+                userId: user.value.identities[0].user_id,
+                postId: id
+            }
+        })
+        await userStore.getPosts()
+        isLike.value = false
+    } catch (error) {
+        console.log(error)
+        isLike.value = false
+    }
+}
+
+const unlikePost = async id => {
+    try {
+        isLike.value = true
+        await useFetch(`/api/unlike-post/${id}`, {
+            method: 'DELETE',
+
+        })
+        isLike.value = false
+        await userStore.getPosts()
+    } catch (error) {
+        console.log(error)
+        isLike.value = false
+    }
+}
+
+const likesFunc = () => {
+    let likePostObj = null
+
+    if (props.post.likes.length < 1) {
+        likePost(props.post.id)
+        return null
+    } else {
+        props.post.likes.forEach(like => {
+            if (like.userId == user.value.identities[0].user_id && like.postId == props.post.id) {
+                likePostObj = like
+            }
+        });
+    }
+
+    if (likePostObj) {
+        unlikePost(likePostObj.id)
+        return null
+    }
+
+    likePost(props.post.id)
+}
 </script>
