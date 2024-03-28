@@ -6,6 +6,24 @@
                     <div class="text-white" v-if="isPosts" v-for="(post, index) in posts" :key="post">
                         <Post :post="post" @isDeleted="posts = []" />
                     </div>
+                    <div v-else>
+                        <client-only>
+                            <div v-if="isLoading" class="mt-20 w-full flex items-center justify-center mx-auto">
+                                <div class="text-white mx-auto flex flex-col items-center justify-center">
+                                    <Icon name="eos-icons:bubble-loading" size="50" color="#ffffff" />
+                                    <div class="w-full mt-1">Loading...</div>
+                                </div>
+                            </div>
+                            <div v-if="!isLoading" class="mt-20 w-full flex items-center justify-center mx-auto">
+                                <div class="text-white mx-auto flex flex-col items-center justify-center">
+                                    <Icon name="tabler:mood-empty" size="50" color="#ffffff" />
+                                    <div class="w-full">Make the first post!</div>
+                                </div>
+                            </div>
+                        </client-only>
+                    </div>
+                    <div class="mt-60" />
+
                 </div>
             </div>
         </div>
@@ -20,7 +38,7 @@ import Post from '~/components/Post.vue';
 const userStore = useUserStore()
 const user = useSupabaseUser()
 const posts = ref([]);
-const isPosts = ref(true);
+const isPosts = ref(false);
 const isLoading = ref(false);
 
 watchEffect(() => {
@@ -30,16 +48,30 @@ watchEffect(() => {
     }
 })
 
-onBeforeMount(() => {
-    posts.value = [
-        {
-            name: 'Vien Huynh',
-            image: "https://randomuser.me/api/portraits",
-            text: "This is title",
-            picture: 'https://placehold.co/500'
-
-        }
-    ]
+onBeforeMount(async () => {
+    try {
+        isLoading.value = true
+        await userStore.getPosts()
+        isLoading.value = false
+    } catch (error) {
+        console.log(error)
+    }
 })
+
+onMounted(() => {
+    watchEffect(() => {
+        if (userStore.posts && userStore.posts.length >= 1) {
+            posts.value = userStore.posts
+            isPosts.value = true
+        }
+    })
+})
+
+watch(() => posts.value, () => {
+    if (userStore.posts && userStore.posts.length >= 1) {
+        posts.value = userStore.posts
+        isPosts.value = true
+    }
+}, { deep: true })
 
 </script>

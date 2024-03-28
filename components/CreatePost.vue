@@ -2,19 +2,16 @@
     <div id="CreatePost" class=" fixed z-50 bottom-0 w-full h-full overflow-hidden">
         <div class="bg-black h-full w-full text-white overflow-auto">
             <div class="flex items-center justify-start py-4 max-w-[500px] mx-auto border-b border-b-gray-700">
-                <button @click="
-                    userStore.isMenuOverlay = false;
-                clearData();
-                " class="rounded-full px-2">
+                <button @click="userStore.isMenuOverlay = false; clearData();" class="rounded-full px-2">
                     <Icon name="mdi:close" size="25" />
                 </button>
                 <div class="text-[16px] font-semibold">New Thread</div>
             </div>
             <div id="Post" class="z-40 bottom-0 max-h-[100vh-200px] w-full px-3 max-w-[500px] mx-auto">
                 <div class="py-2 w-full">
-                    <div class="flex items-center text-white">
-                        <img class="rounded-full h-[35px]" src="https://picsum.photos/id/223/50" alt="">
-                        <div class="ml-2 font-semibold text-[18px]">Vien Huynh</div>
+                    <div v-if="user" class="flex items-center text-white">
+                        <img class="rounded-full h-[35px]" :src="user.identities[0].identity_data.avatar_url" alt="">
+                        <div class="ml-2 font-semibold text-[18px]">{{ user.user_metadata.name }}</div>
                     </div>
                 </div>
                 <div class="relative flex items-center w-full">
@@ -64,6 +61,9 @@ import { v4 as uuid } from 'uuid'
 import { useUserStore } from '~/stores/user';
 
 const userStore = useUserStore()
+const user = useSupabaseUser()
+const client = useSupabaseClient()
+
 
 const text = ref(null)
 const file = ref(null)

@@ -8,7 +8,8 @@
                         {{ post.name }}
                     </div>
                 </div>
-                <div @click="isMenu = !isMenu" class="relative">
+                <div v-if="user && user.identities && user.identities[0].user_id === post.user_id"
+                    @click="isMenu = !isMenu" class="relative">
                     <button :disabled="isDeleting"
                         class="flex items-center text-white p-1 h-[24px] w-[24px] hover:bg-gray-800 rounded-full cursor-pointer"
                         :class="isMenu ? 'bg-gray-800' : ''">
@@ -31,7 +32,8 @@
                 </div>
                 <div class="bg-black rounded-lg w-[calc(100%-50px)] text-sm w-full font-light">
                     <div class="py-2 text-gray-300">{{ post.text }}</div>
-                    <img v-if="post && post.picture" class="mx-auto w-full mt-2 pr-2 rounded" :src="post.picture" />
+                    <img v-if="post && post.picture" class="mx-auto w-full mt-2 pr-2 rounded"
+                        :src="runtimeConfig.public.bucketURL + post.picture" />
 
                     <div class="absolute mt-2 w-full ml-2">
                         <button :disabled="isLike" @click="likesFunc()" class="flex items-center gap-1">
@@ -78,7 +80,7 @@
 import { useUserStore } from '~/stores/user';
 
 const userStore = useUserStore()
-
+const user = useSupabaseUser()
 const runtimeConfig = useRuntimeConfig()
 
 const isMenu = ref(false)
