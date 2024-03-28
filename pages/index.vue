@@ -18,9 +18,17 @@ import { useUserStore } from '~/stores/user';
 import Post from '~/components/Post.vue';
 
 const userStore = useUserStore()
+const user = useSupabaseUser()
 const posts = ref([]);
 const isPosts = ref(true);
 const isLoading = ref(false);
+
+watchEffect(() => {
+    console.log(user.value, 'this is log')
+    if (!user.value) {
+        return navigateTo('/auth')
+    }
+})
 
 onBeforeMount(() => {
     posts.value = [

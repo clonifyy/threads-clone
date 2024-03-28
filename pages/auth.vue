@@ -37,17 +37,26 @@
 
 <script setup>
 
-// watchEffect(() => {
-//     if (user.value) {
-//         return navigateTo('/')
-//     }
-// })
+const client = useSupabaseClient()
+const user = useSupabaseUser()
 
-// const login = async (prov) => {
-//     const { data, error } = await supabase.auth.signInWithOAuth({
-//         provider: prov,
-//         redirectTo: window.location.origin
-//     })
-//     if (error) console.log(error)
-// }
+watchEffect(() => {
+    if (user.value) {
+        console.log(user.value)
+        return navigateTo('/')
+    }
+})
+
+const login = async (prov) => {
+    const { data, error } = await client.auth.signInWithOAuth({
+        provider: prov,
+        redirectTo: window.location.origin
+    })
+    console.log({
+        data,
+        error
+    })
+
+    if (error) console.log(error)
+}
 </script>
